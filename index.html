@@ -1,0 +1,161 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8"/>
+  <meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+  <script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+  <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;500;600;700;800&amp;family=Instrument+Serif:ital@0;1&amp;display=swap" rel="stylesheet"/>
+  <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+  <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+  <script id="tailwind-config">
+    tailwind.config = {
+      darkMode: "class",
+      theme: {
+        extend: {
+          colors: {
+            "primary": "#d47311",
+            "background-light": "#f8f7f6",
+            "background-dark": "#221910",
+          },
+          fontFamily: {
+            "display": ["Plus Jakarta Sans", "sans-serif"],
+            "serif": ["Instrument Serif", "serif"]
+          },
+          borderRadius: {"DEFAULT": "0.25rem", "lg": "0.5rem", "xl": "0.75rem", "full": "9999px"},
+        },
+      },
+    }
+  </script>
+  <link rel="stylesheet" href="src/styles.css">
+  <title>Ibu's Digital Archive</title>
+</head>
+<body class="bg-background-light dark:bg-background-dark font-display text-slate-900 dark:text-slate-100 min-h-screen">
+  <div class="layout-container flex h-full grow flex-col">
+    <!-- Top Navigation -->
+    <header class="flex items-center justify-between whitespace-nowrap border-b border-solid border-primary/10 px-4 md:px-10 py-4 bg-background-light/80 backdrop-blur-md sticky top-0 z-50">
+      <div class="flex items-center gap-4 md:gap-8">
+        <button class="md:hidden p-2 rounded-lg hover:bg-primary/5 transition-colors" id="sidebar-toggle">
+          <span class="material-symbols-outlined text-xl">menu</span>
+        </button>
+        <div class="flex items-center gap-3">
+          <div class="text-primary">
+            <span class="material-symbols-outlined text-2xl md:text-3xl">menu_book</span>
+          </div>
+          <h2 class="text-slate-900 font-serif text-xl md:text-2xl font-bold italic tracking-tight">Ibu's Digital Archive</h2>
+        </div>
+        <nav class="hidden md:flex items-center gap-8 ml-8">
+          <a class="text-slate-600 hover:text-primary text-sm font-medium transition-colors" href="#">Home</a>
+          <a class="text-slate-600 hover:text-primary text-sm font-medium transition-colors" href="#">The Collection</a>
+          <a class="text-slate-600 hover:text-primary text-sm font-medium transition-colors" href="#">History</a>
+          <a class="text-slate-600 hover:text-primary text-sm font-medium transition-colors" href="#">Contact</a>
+        </nav>
+      </div>
+      <div class="flex items-center gap-4 md:gap-6">
+        <label class="hidden sm:block relative">
+          <span class="absolute inset-y-0 left-0 flex items-center pl-3 text-slate-400">
+            <span class="material-symbols-outlined text-xl">search</span>
+          </span>
+          <input class="form-input block w-48 md:w-64 rounded-full border-none bg-primary/5 py-2 pl-10 pr-4 text-sm focus:ring-2 focus:ring-primary/20" placeholder="Search a recipe..." type="text" id="search-input"/>
+        </label>
+      </div>
+    </header>
+    <main class="flex flex-1 overflow-hidden h-[calc(100vh-73px)]">
+      <!-- Left Sidebar (Navigation) -->
+      <aside class="fixed inset-y-0 left-0 z-40 w-72 border-r border-primary/10 bg-background-light p-6 flex flex-col gap-8 overflow-y-auto transform -translate-x-full md:translate-x-0 transition-transform duration-300 ease-in-out md:relative md:inset-auto md:flex" id="sidebar">
+        <div>
+          <h3 class="text-primary text-xs font-bold uppercase tracking-widest mb-4">Archive Menu</h3>
+          <div class="flex flex-col gap-1">
+            <button class="flex items-center gap-3 px-3 py-2 rounded-lg bg-primary text-white shadow-sm transition-all" id="recipe-collection">
+              <span class="material-symbols-outlined text-xl">folder_shared</span>
+              <span class="text-sm font-semibold">Recipe Collection</span>
+            </button>
+            <button class="flex items-center gap-3 px-3 py-2 rounded-lg text-slate-600 hover:bg-primary/5 transition-all">
+              <span class="material-symbols-outlined text-xl">photo_library</span>
+              <span class="text-sm font-medium">Family Gallery</span>
+            </button>
+            <button class="flex items-center gap-3 px-3 py-2 rounded-lg text-slate-600 hover:bg-primary/5 transition-all">
+              <span class="material-symbols-outlined text-xl">history_edu</span>
+              <span class="text-sm font-medium">Handwritten Notes</span>
+            </button>
+          </div>
+        </div>
+        <div>
+          <h3 class="text-slate-400 text-xs font-bold uppercase tracking-widest mb-4 px-3">Categories</h3>
+          <div class="space-y-4" id="categories">
+            <div>
+              <div class="flex items-center gap-2 px-3 py-1 mb-1">
+                <span class="material-symbols-outlined text-primary text-sm">restaurant</span>
+                <span class="text-slate-900 font-bold text-sm">Soups</span>
+              </div>
+              <div class="ml-6 space-y-1">
+                <a class="block px-3 py-2 rounded-lg bg-primary/10 text-primary font-bold text-sm border-l-4 border-primary recipe-link" href="#" data-recipe="sayur-asem">Ibu's Sayur Asem</a>
+                <a class="block px-3 py-2 rounded-lg text-slate-600 hover:text-primary transition-colors text-sm font-medium recipe-link" href="#" data-recipe="soto-ayam">Soto Ayam Kampung</a>
+                <a class="block px-3 py-2 rounded-lg text-slate-600 hover:text-primary transition-colors text-sm font-medium recipe-link" href="#" data-recipe="sup-buntut">Sup Buntut</a>
+              </div>
+            </div>
+            <div>
+              <div class="flex items-center gap-2 px-3 py-1 mb-1">
+                <span class="material-symbols-outlined text-slate-400 text-sm">skillet</span>
+                <span class="text-slate-600 font-bold text-sm">Main Dishes</span>
+              </div>
+              <div class="ml-6 space-y-1">
+                <a class="block px-3 py-2 rounded-lg text-slate-600 hover:text-primary transition-colors text-sm font-medium recipe-link" href="#" data-recipe="ayam-kecap">Ayam Kecap</a>
+              </div>
+            </div>
+            <div>
+              <div class="flex items-center gap-2 px-3 py-1 mb-1">
+                <span class="material-symbols-outlined text-slate-400 text-sm">icecream</span>
+                <span class="text-slate-600 font-bold text-sm">Desserts</span>
+              </div>
+            </div>
+          </div>
+        </div>
+        <div class="mt-auto">
+          <div class="p-4 rounded-xl bg-primary/5 border border-primary/10">
+            <p class="text-xs text-slate-500 italic leading-relaxed text-center">"Preserving the flavors of our heritage, one page at a time."</p>
+          </div>
+        </div>
+      </aside>
+      <!-- Overlay for mobile sidebar -->
+      <div class="fixed inset-0 bg-black bg-opacity-50 z-30 md:hidden hidden" id="sidebar-overlay"></div>
+      <!-- Middle Panel (Digital Transcription) -->
+      <section class="flex-1 overflow-y-auto paper-texture p-6 md:p-12 border-r border-primary/10 md:border-r" id="content">
+        <div class="max-w-4xl mx-auto">
+          <nav class="flex items-center gap-2 text-primary/60 text-xs font-bold uppercase tracking-tighter mb-6">
+            <span>Recipes</span>
+            <span class="material-symbols-outlined text-[10px]">arrow_forward_ios</span>
+            <span>Soups</span>
+            <span class="material-symbols-outlined text-[10px]">arrow_forward_ios</span>
+            <span class="text-primary" id="current-recipe">Sayur Asem</span>
+          </nav>
+          <h1 class="font-serif text-4xl md:text-6xl text-slate-900 italic mb-4 leading-tight" id="recipe-title">Ibu's Sayur Asem</h1>
+          <p class="text-slate-500 font-medium text-base md:text-lg italic mb-8 md:mb-10" id="recipe-description">A refreshing sweet and sour vegetable soup from West Java.</p>
+          <div class="grid grid-cols-1 gap-8 md:gap-12" id="recipe-content">
+            <!-- Content will be loaded here -->
+          </div>
+        </div>
+      </section>
+      <!-- Right Panel (Original Handwriting) -->
+      <section class="hidden lg:flex w-[450px] bg-[#e6e2df] p-6 md:p-10 overflow-y-auto flex flex-col items-center" id="scan-panel">
+        <div class="mb-8 w-full">
+          <h3 class="text-slate-500 text-xs font-bold uppercase tracking-widest mb-2 flex items-center gap-2">
+            <span class="material-symbols-outlined text-sm">photo_camera</span>
+            Original Manuscript
+          </h3>
+        </div>
+        <div class="relative w-full max-w-sm group" id="scan-container">
+          <!-- Scanned content will be loaded here -->
+        </div>
+        <div class="mt-12 w-full space-y-4">
+          <h4 class="text-slate-400 text-xs font-bold uppercase tracking-widest px-4">Metadata</h4>
+          <div class="bg-white/40 rounded-xl p-4 text-xs text-slate-600 space-y-2" id="metadata">
+            <!-- Metadata will be loaded here -->
+          </div>
+        </div>
+      </section>
+    </main>
+  </div>
+  <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
+  <script type="module" src="src/main.js"></script>
+</body>
+</html>
