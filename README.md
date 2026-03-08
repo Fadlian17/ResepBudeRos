@@ -1,25 +1,107 @@
-# Resep Ibu Archive
+# Ibu's Digital Archive
 
-Situs arsip resep tulisan tangan ibu — boilerplate sederhana.
+Website arsip resep tulisan tangan Ibu — mengabadikan warisan kuliner keluarga dalam format digital.
 
-Struktur dasar:
+## Fitur
 
+- **Responsive Design:** Desktop, tablet, dan mobile-friendly dengan Tailwind CSS.
+- **Tiga Panel Layout:** Sidebar navigasi, konten resep, dan panel scan original (desktop).
+- **Search Aktif:** Cari resep berdasarkan nama, kategori, atau ID secara real-time.
+- **Split View Desktop:** Tampilkan teks resep di tengah dan scan asli di sebelah kanan.
+- **Mobile Sidebar:** Sidebar slide-in dengan overlay untuk navigasi mobile.
+- **Metadata & Chef's Notes:** Setiap resep memiliki informasi tanggal scan, lokasi, dan catatan khusus.
+
+## Struktur Proyek
+
+```
 resep-ibu-archive/
 ├── public/
-│   ├── scans/
+│   ├── scans/              # File scan PDF/JPG resep asli
+│   │   ├── ayam-kecap.pdf
+│   │   ├── sayur-asem.jpg
+│   │   └── ...
 │   └── fonts/
 ├── src/
-│   ├── content/
-│   ├── components/
-│   └── pages/
-├── package.json
+│   ├── main.js             # Logic utama (search, load recipe, sidebar toggle)
+│   ├── styles.css          # Custom CSS (paper texture, shadows)
+│   ├── input.css           # Tailwind directives
+│   ├── components/         # Komponen helper (header, sidebar)
+│   └── content/            # Markdown resep
+│       ├── ayam-kecap.md
+│       ├── sayur-asem.md
+│       └── ...
+├── index.html              # Entry point utama
+├── package.json            # Dependencies
+├── tailwind.config.js      # Tailwind config
 └── README.md
+```
 
-Cara menjalankan (butuh Node.js untuk `npx`):
+## Setup & Menjalankan
 
-1. Install (opsional): `npm install`
-2. Jalankan server statis: `npm start`
+### Prerequisites
+- Node.js (untuk `npx serve`)
 
-Lalu buka http://localhost:5000 atau port yang ditampilkan oleh `serve`.
+### Instalasi & Run
+```bash
+# Clone atau download project
+cd resep-ibu-archive
 
-Cerita singkat: Isi file `src/content/*.md` dengan resep yang sudah Anda ketik ulang, dan taruh hasil scan di `public/scans/`.
+# Install dependencies (opsional, hanya jika npm start error)
+npm install
+
+# Jalankan dev server
+npm start
+```
+
+Buka browser ke **http://localhost:5000** (atau port yang ditampilkan).
+
+## Cara Pakai
+
+1. **Tambah Resep Baru:**
+   - Buat file `.md` di `src/content/namaresep.md` dengan format YAML frontmatter + markdown content.
+   - Tambahkan scan PDF/JPG ke `public/scans/`.
+   - Update array `recipes` di `src/main.js` dengan data resep baru.
+
+2. **Search:**
+   - Ketik nama resep, kategori, atau kata kunci di search bar header.
+   - Sidebar akan filter otomatis.
+
+3. **Navigasi:**
+   - Desktop: 3 panel lengkap (sidebar, content, scan).
+   - Tablet: 2 panel (sidebar hilang, content full + scan hilang).
+   - Mobile: Content full, sidebar slide-in toggle.
+
+## Teknologi
+
+- **HTML5 & Vanilla JavaScript** (tanpa framework berat)
+- **Tailwind CSS** via CDN
+- **Marked.js** untuk parsing markdown
+- **Google Material Symbols** untuk ikon
+
+## Warna & Brand
+
+- **Primary Color:** `#d47311` (oranye warm)
+- **Background Light:** `#f8f7f6` (cream/paper)
+- **Font Display:** Plus Jakarta Sans
+- **Font Serif:** Instrument Serif
+
+## Planning & TODO
+
+- [ ] OCR/text extraction dari PDF scan (menggunakan `ocrmypdf` atau `tesseract`)
+- [ ] Export resep ke PDF atau print-friendly
+- [ ] Dark mode toggle
+- [ ] Filter advanced (by ingredients, cook time)
+- [ ] Rating/favorit resep
+- [ ] Kategori tambahan (drinks, snacks)
+- [ ] Backend & database untuk mengelola resep dinamis
+- [ ] Tambah fitur kolaboratif (share, comment)
+
+## Notes
+
+- Desain didasarkan pada [Google Stitch project](https://stitch.withgoogle.com) dengan adaptasi lokal.
+- Metadata & scan placeholder saat ini menggunakan data hardcoded; bisa dinamis dengan backend.
+- Responsive breakpoints: mobile < 768px, tablet 768px - 1023px, desktop ≥ 1024px.
+
+---
+
+**Didedikasikan untuk Ibu dan warisan resep keluarga.**
