@@ -7,6 +7,62 @@
   box-shadow: 0 10px 30px -10px rgba(34, 25, 16, 0.2), 0 4px 6px -4px rgba(34, 25, 16, 0.1);
 }
 
+/* Lightbox */
+#lightbox-overlay {
+  display: none;
+}
+#lightbox-overlay.open {
+  display: flex;
+}
+#lightbox-content img,
+#lightbox-content embed {
+  width: 100%;
+  height: 70vh;
+  object-fit: contain;
+}
+
+/* Thumbnail scroller */
+.thumb-scroll {
+  display: flex;
+  gap: 12px;
+  overflow-x: auto;
+  padding: 12px 0;
+  scroll-snap-type: x mandatory;
+}
+.thumb-scroll::-webkit-scrollbar {
+  height: 8px;
+}
+.thumb-scroll::-webkit-scrollbar-thumb {
+  background: rgba(34, 25, 16, 0.25);
+  border-radius: 999px;
+}
+.thumb-card {
+  min-width: 180px;
+  flex: 0 0 auto;
+  scroll-snap-align: start;
+  border: 1px solid rgba(34, 25, 16, 0.12);
+  border-radius: 1rem;
+  overflow: hidden;
+  background: rgba(255, 255, 255, 0.8);
+  cursor: pointer;
+  transition: transform 0.15s ease, box-shadow 0.15s ease;
+}
+.thumb-card:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 8px 20px rgba(0, 0, 0, 0.08);
+}
+.thumb-card img {
+  height: 110px;
+  width: 100%;
+  object-fit: cover;
+}
+.thumb-card .thumb-title {
+  padding: 10px 12px;
+  font-weight: 700;
+  font-size: 0.9rem;
+  color: #1f2937;
+}
+
 /* Responsive adjustments */
 @media (max-width: 768px) {
   .layout-container {

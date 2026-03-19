@@ -1,0 +1,6 @@
+<svg width="600" height="400" xmlns="http://www.w3.org/2000/svg">
+  <rect width="600" height="400" fill="#f8f7f6"/>
+  <circle cx="150" cy="200" r="70" fill="#d47311" opacity="0.3"/>
+  <circle cx="450" cy="200" r="70" fill="#221910" opacity="0.1"/>
+  <text x="50%" y="50%" dominant-baseline="middle" text-anchor="middle" font-family="Plus Jakarta Sans, sans-serif" font-size="28" fill="#221910">Holiday Memories</text>
+</svg>

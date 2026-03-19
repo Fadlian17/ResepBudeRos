@@ -9,7 +9,7 @@ const recipes = [
     metadata: {
       dateScanned: 'Oct 12, 2023',
       originalYear: 'Jakarta 1990',
-      location: 'East Jakarta,  Jakarta',
+      location: 'East Jakarta, Jakarta',
       format: 'Hardbound Notebook'
     }
   },
@@ -23,7 +23,7 @@ const recipes = [
     metadata: {
       dateScanned: 'Oct 12, 2023',
       originalYear: 'Circa 1985',
-      location: 'East Jakarta,  Jakarta',
+      location: 'East Jakarta, Jakarta',
       format: 'Hardbound Notebook'
     }
   },
@@ -37,7 +37,7 @@ const recipes = [
     metadata: {
       dateScanned: 'Oct 12, 2023',
       originalYear: 'Jakarta 1990',
-      location: 'East Jakarta,  Jakarta',
+      location: 'East Jakarta, Jakarta',
       format: 'Hardbound Notebook'
     }
   },
@@ -51,11 +51,40 @@ const recipes = [
     metadata: {
       dateScanned: 'Oct 12, 2023',
       originalYear: 'Jakarta 1990',
-      location: 'East Jakarta,  Jakarta',
+      location: 'East Jakarta, Jakarta',
       format: 'Hardbound Notebook'
     }
   }
 ];
+
+const galleryItems = [
+  {
+    id: 'family-1',
+    title: 'Family Moment',
+    src: 'public/gallery/family-1.svg',
+    caption: 'A warm day in the kitchen with grandma.',
+  },
+  {
+    id: 'family-2',
+    title: 'Grandma\'s Kitchen',
+    src: 'public/gallery/family-2.svg',
+    caption: 'Dinner table stories and recipes.',
+  },
+  {
+    id: 'family-3',
+    title: 'Holiday Memories',
+    src: 'public/gallery/family-3.svg',
+    caption: 'Moments we save in our hearts.',
+  }
+];
+
+const appState = {
+  view: 'recipes', // 'recipes' | 'gallery' | 'notes'
+  activeRecipeId: 'sayur-asem',
+  searchQuery: '',
+  galleryPage: 1,
+  galleryPerPage: 6
+};
 
 function renderMarkdown(md) {
   return marked.parse(md);
@@ -209,124 +238,426 @@ function createMetadataElement(recipe) {
   return container;
 }
 
-async function loadRecipe(recipeId) {
+function openModal(contentHtml) {
+  const overlay = document.getElementById('lightbox-overlay');
+  const content = document.getElementById('lightbox-content');
+  content.innerHTML = contentHtml;
+  overlay.classList.add('open');
+}
+
+function closeModal() {
+  const overlay = document.getElementById('lightbox-overlay');
+  overlay.classList.remove('open');
+}
+
+function showLightboxForItems(items, startIndex = 0) {
+  appState.galleryItems = items;
+  appState.lightboxIndex = startIndex;
+
+  function renderLightbox() {
+    const item = appState.galleryItems[appState.lightboxIndex];
+    const prevDisabled = appState.lightboxIndex === 0;
+    const nextDisabled = appState.lightboxIndex === appState.galleryItems.length - 1;
+
+    const html = `
+      <div class="relative bg-white rounded-xl overflow-hidden shadow-lg">
+        <div class="flex items-center justify-between p-4 border-b border-primary/10">
+          <div>
+            <h3 class="font-bold text-lg text-slate-900">${item.title}</h3>
+            <p class="text-slate-600 text-sm">${item.caption}</p>
+          </div>
+          <div class="flex items-center gap-2">
+            <button id="lightbox-prev" class="p-2 rounded-full bg-white border border-slate-200 shadow-sm hover:bg-slate-50" ${prevDisabled ? 'disabled' : ''}>
+              <span class="material-symbols-outlined">chevron_left</span>
+            </button>
+            <button id="lightbox-next" class="p-2 rounded-full bg-white border border-slate-200 shadow-sm hover:bg-slate-50" ${nextDisabled ? 'disabled' : ''}>
+              <span class="material-symbols-outlined">chevron_right</span>
+            </button>
+          </div>
+        </div>
+        <div class="p-4">
+          <div class="aspect-[16/9] w-full bg-slate-100 rounded-lg overflow-hidden">
+            ${item.src.endsWith('.pdf')
+              ? `<embed src="/${item.src}" type="application/pdf" class="w-full h-full object-cover" />`
+              : `<img src="/${item.src}" alt="${item.title}" class="w-full h-full object-cover" />`}
+          </div>
+        </div>
+        <div class="p-4 border-t border-primary/10 text-right">
+          <button id="lightbox-close-btn" class="px-4 py-2 rounded-full bg-primary text-white shadow-sm hover:bg-primary/90">Close</button>
+        </div>
+      </div>
+    `;
+    openModal(html);
+
+    document.getElementById('lightbox-prev')?.addEventListener('click', () => {
+      if (appState.lightboxIndex > 0) {
+        appState.lightboxIndex -= 1;
+        renderLightbox();
+      }
+    });
+    document.getElementById('lightbox-next')?.addEventListener('click', () => {
+      if (appState.lightboxIndex < appState.galleryItems.length - 1) {
+        appState.lightboxIndex += 1;
+        renderLightbox();
+      }
+    });
+    document.getElementById('lightbox-close-btn')?.addEventListener('click', closeModal);
+  }
+
+  renderLightbox();
+}
+
+function openNotesModal(recipe) {
+  const contentHtml = `
+    <div class="relative bg-white rounded-xl overflow-hidden shadow-lg">
+      <div class="flex items-center justify-between p-4 border-b border-primary/10">
+        <div>
+          <h3 class="font-bold text-lg text-slate-900">${recipe.title}</h3>
+          <p class="text-slate-600 text-sm">${recipe.description}</p>
+        </div>
+        <button id="lightbox-close-btn" class="px-4 py-2 rounded-full bg-primary text-white shadow-sm hover:bg-primary/90">Close</button>
+      </div>
+      <div class="p-4">
+        <div class="aspect-[16/9] w-full bg-slate-100 rounded-lg overflow-hidden mb-4">
+          ${recipe.scan.endsWith('.pdf')
+            ? `<embed src="/${recipe.scan}" type="application/pdf" class="w-full h-full object-cover" />`
+            : `<img src="/${recipe.scan}" alt="${recipe.title}" class="w-full h-full object-cover" />`}
+        </div>
+        <div class="flex flex-col gap-2">
+          <button id="ocr-run" class="px-4 py-2 rounded-lg bg-primary text-white shadow-sm hover:bg-primary/90">Extract text (OCR)</button>
+          <textarea id="ocr-output" class="w-full h-40 p-3 border border-primary/20 rounded-lg bg-slate-50 text-sm text-slate-700" readonly placeholder="OCR results will appear here..."></textarea>
+        </div>
+      </div>
+    </div>
+  `;
+
+  openModal(contentHtml);
+  document.getElementById('lightbox-close-btn')?.addEventListener('click', closeModal);
+  document.getElementById('ocr-run')?.addEventListener('click', async () => {
+    const output = document.getElementById('ocr-output');
+    const scanSrc = `/${recipe.scan}`;
+
+    if (recipe.scan.endsWith('.pdf')) {
+      output.value = 'OCR is not available for PDF previews. Convert a page to an image or place a text file at `/public/ocr/${recipe.id}.txt`.';
+      return;
+    }
+
+    if (!window.Tesseract) {
+      output.value = 'Tesseract is not loaded. Please ensure tesseract.js is included in the page to use OCR.';
+      return;
+    }
+
+    output.value = 'Recognizing text… This can take 10–30 seconds for a scanned page.';
+    try {
+      const result = await Tesseract.recognize(scanSrc, 'eng', {
+        logger: (m) => {
+          if (m.status === 'recognizing text') {
+            output.value = `Recognizing text… ${Math.round(m.progress * 100)}%`;
+          }
+        }
+      });
+      output.value = result.data.text.trim() || 'No text recognized (try a clearer scan or provide a pre-extracted text file at /ocr/${recipe.id}.txt).';
+    } catch (err) {
+      console.error(err);
+      output.value = 'OCR failed. You can provide a pre-extracted text file at `/public/ocr/${recipe.id}.txt`.';
+    }
+  });
+}
+
+function setActiveViewButton(view) {
+  document.querySelectorAll('[data-view]').forEach(btn => {
+    const isActive = btn.getAttribute('data-view') === view;
+    btn.classList.toggle('bg-primary/10', isActive);
+    btn.classList.toggle('text-primary', isActive);
+    btn.classList.toggle('text-slate-600', !isActive);
+    btn.classList.toggle('font-bold', isActive);
+  });
+}
+
+function closeSidebar() {
+  const sidebar = document.getElementById('sidebar');
+  const overlay = document.getElementById('sidebar-overlay');
+  sidebar.classList.add('-translate-x-full');
+  overlay.classList.add('hidden');
+}
+
+function openSidebar() {
+  const sidebar = document.getElementById('sidebar');
+  const overlay = document.getElementById('sidebar-overlay');
+  sidebar.classList.remove('-translate-x-full');
+  overlay.classList.remove('hidden');
+}
+
+function renderRecipe(recipeId) {
   const recipe = recipes.find(r => r.id === recipeId);
   if (!recipe) return;
 
-  // Update title and description
+  appState.activeRecipeId = recipeId;
+
   document.getElementById('current-recipe').textContent = recipe.title;
   document.getElementById('recipe-title').textContent = recipe.title;
   document.getElementById('recipe-description').textContent = recipe.description;
 
-  // Load content
   const contentDiv = document.getElementById('recipe-content');
   contentDiv.innerHTML = createRecipeContent(recipe);
 
-  // Load scan
   const scanContainer = document.getElementById('scan-container');
   scanContainer.innerHTML = '';
   scanContainer.appendChild(createScanElement(recipe));
 
-  // Load metadata
   const metadataDiv = document.getElementById('metadata');
   metadataDiv.innerHTML = '';
   metadataDiv.appendChild(createMetadataElement(recipe));
+
+  // Keep sidebar highlighting in sync
+  if (appState.view === 'recipes') {
+    updateSidebar(filterRecipes(appState.searchQuery));
+  }
 }
 
-function filterRecipes(query) {
-  if (!query.trim()) {
-    return recipes; // Return all if no query
+function renderGallery(query = '') {
+  document.getElementById('current-recipe').textContent = 'Family Gallery';
+  document.getElementById('recipe-title').textContent = 'Family Gallery';
+  document.getElementById('recipe-description').textContent = 'A curated collection of family moments and memories.';
+
+  const filtered = query.trim()
+    ? galleryItems.filter(item => item.title.toLowerCase().includes(query.toLowerCase()) || item.caption.toLowerCase().includes(query.toLowerCase()))
+    : galleryItems;
+
+  const totalPages = Math.max(1, Math.ceil(filtered.length / appState.galleryPerPage));
+  appState.galleryPage = Math.min(appState.galleryPage, totalPages);
+
+  const start = (appState.galleryPage - 1) * appState.galleryPerPage;
+  const pageItems = filtered.slice(start, start + appState.galleryPerPage);
+
+  const contentDiv = document.getElementById('recipe-content');
+  contentDiv.innerHTML = '';
+
+  const grid = document.createElement('div');
+  grid.className = 'grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6';
+
+  pageItems.forEach((item, idx) => {
+    const card = document.createElement('div');
+    card.className = 'rounded-xl overflow-hidden bg-white/80 shadow-sm border border-primary/10 hover:shadow-md transition-shadow cursor-pointer';
+    card.innerHTML = `
+      <img src="/${item.src}" alt="${item.title}" class="w-full h-40 object-cover" />
+      <div class="p-4">
+        <h3 class="font-bold text-lg text-slate-900">${item.title}</h3>
+        <p class="text-slate-700 text-sm mt-2">${item.caption}</p>
+      </div>
+    `;
+    card.addEventListener('click', () => {
+      showLightboxForItems(filtered, start + idx);
+    });
+    grid.appendChild(card);
+  });
+
+  if (!filtered.length) {
+    const empty = document.createElement('p');
+    empty.className = 'text-slate-500 italic';
+    empty.textContent = 'No gallery items match your search.';
+    contentDiv.appendChild(empty);
+    return;
   }
-  const lowerQuery = query.toLowerCase();
-  return recipes.filter(recipe =>
-    recipe.title.toLowerCase().includes(lowerQuery) ||
-    recipe.category.toLowerCase().includes(lowerQuery) ||
-    recipe.id.toLowerCase().includes(lowerQuery)
-  );
+
+  contentDiv.appendChild(grid);
+
+  if (totalPages > 1) {
+    const pager = document.createElement('div');
+    pager.className = 'flex items-center justify-center gap-3 mt-8';
+
+    const prev = document.createElement('button');
+    prev.className = 'px-3 py-2 rounded-lg bg-white border border-primary/20 text-sm font-medium hover:bg-primary/10';
+    prev.disabled = appState.galleryPage === 1;
+    prev.textContent = 'Prev';
+    prev.addEventListener('click', () => {
+      if (appState.galleryPage > 1) {
+        appState.galleryPage -= 1;
+        renderGallery(query);
+      }
+    });
+
+    const next = document.createElement('button');
+    next.className = 'px-3 py-2 rounded-lg bg-white border border-primary/20 text-sm font-medium hover:bg-primary/10';
+    next.disabled = appState.galleryPage === totalPages;
+    next.textContent = 'Next';
+    next.addEventListener('click', () => {
+      if (appState.galleryPage < totalPages) {
+        appState.galleryPage += 1;
+        renderGallery(query);
+      }
+    });
+
+    const pageInfo = document.createElement('span');
+    pageInfo.className = 'text-sm text-slate-600';
+    pageInfo.textContent = `Page ${appState.galleryPage} of ${totalPages}`;
+
+    pager.appendChild(prev);
+    pager.appendChild(pageInfo);
+    pager.appendChild(next);
+
+    contentDiv.appendChild(pager);
+  }
+}
+
+function renderNotes(query = '') {
+  document.getElementById('current-recipe').textContent = 'Handwritten Notes';
+  document.getElementById('recipe-title').textContent = 'Handwritten Notes';
+  document.getElementById('recipe-description').textContent = 'Browse the original recipes as scanned pages.';
+
+  const filtered = query.trim()
+    ? recipes.filter(r => r.title.toLowerCase().includes(query.toLowerCase()) || r.id.toLowerCase().includes(query.toLowerCase()))
+    : recipes;
+
+  const contentDiv = document.getElementById('recipe-content');
+  contentDiv.innerHTML = '';
+
+  const scroller = document.createElement('div');
+  scroller.className = 'flex gap-6 overflow-x-auto py-4 px-1 snap-x snap-mandatory';
+
+  filtered.forEach(recipe => {
+    const card = document.createElement('div');
+    card.className = 'min-w-[260px] flex-shrink-0 snap-start rounded-xl overflow-hidden bg-white/80 shadow-sm border border-primary/10 hover:shadow-md transition-shadow cursor-pointer';
+    card.innerHTML = `
+      <div class="relative h-40 bg-slate-100">
+        ${recipe.scan.endsWith('.pdf')
+          ? `<embed src="/${recipe.scan}" type="application/pdf" class="w-full h-full object-cover" />`
+          : `<img src="/${recipe.scan}" alt="Scan ${recipe.title}" class="w-full h-full object-cover" />`}
+        <div class="absolute bottom-0 left-0 right-0 bg-gradient-to-t from-slate-900/70 to-transparent px-3 py-2">
+          <p class="text-sm text-white font-semibold">${recipe.title}</p>
+        </div>
+      </div>
+      <div class="p-4">
+        <p class="text-slate-700 text-sm mb-3">${recipe.description}</p>
+        <button class="w-full px-4 py-2 rounded-lg bg-primary text-white text-sm font-semibold hover:bg-primary/90">Open notes</button>
+      </div>
+    `;
+    card.addEventListener('click', () => openNotesModal(recipe));
+    scroller.appendChild(card);
+  });
+
+  if (!filtered.length) {
+    const empty = document.createElement('p');
+    empty.className = 'text-slate-500 italic';
+    empty.textContent = 'No notes match your search.';
+    contentDiv.appendChild(empty);
+    return;
+  }
+
+  contentDiv.appendChild(scroller);
 }
 
 function updateSidebar(filteredRecipes) {
   const categoriesDiv = document.getElementById('categories');
   categoriesDiv.innerHTML = '';
 
-  // Group by category
   const grouped = {};
   filteredRecipes.forEach(recipe => {
-    if (!grouped[recipe.category]) {
-      grouped[recipe.category] = [];
-    }
+    if (!grouped[recipe.category]) grouped[recipe.category] = [];
     grouped[recipe.category].push(recipe);
   });
 
-  // Render categories
   Object.keys(grouped).forEach(category => {
     const categoryDiv = document.createElement('div');
     const icon = category === 'Soups' ? 'restaurant' : category === 'Main Dishes' ? 'skillet' : 'icecream';
-    const isActive = grouped[category].some(r => r.id === 'sayur-asem'); // Example active check
+    const categoryIsActive = grouped[category].some(r => r.id === appState.activeRecipeId);
+
     categoryDiv.innerHTML = `
       <div class="flex items-center gap-2 px-3 py-1 mb-1">
-        <span class="material-symbols-outlined text-${isActive ? 'primary' : 'slate-400'} text-sm">${icon}</span>
-        <span class="text-${isActive ? 'slate-900' : 'slate-600'} font-bold text-sm">${category}</span>
+        <span class="material-symbols-outlined text-${categoryIsActive ? 'primary' : 'slate-400'} text-sm">${icon}</span>
+        <span class="text-${categoryIsActive ? 'slate-900' : 'slate-600'} font-bold text-sm">${category}</span>
       </div>
       <div class="ml-6 space-y-1">
-        ${grouped[category].map(recipe => `
-          <a class="block px-3 py-2 rounded-lg ${recipe.id === 'sayur-asem' ? 'bg-primary/10 text-primary font-bold border-l-4 border-primary' : 'text-slate-600 hover:text-primary transition-colors'} text-sm font-medium recipe-link" href="#" data-recipe="${recipe.id}">${recipe.title}</a>
-        `).join('')}
+        ${grouped[category]
+          .map(recipe => `
+            <a class="block px-3 py-2 rounded-lg ${recipe.id === appState.activeRecipeId ? 'bg-primary/10 text-primary font-bold border-l-4 border-primary' : 'text-slate-600 hover:text-primary transition-colors'} text-sm font-medium recipe-link" href="#" data-recipe="${recipe.id}">${recipe.title}</a>
+          `)
+          .join('')}
       </div>
     `;
+
     categoriesDiv.appendChild(categoryDiv);
   });
 
-  // Re-attach event listeners
+  // Attach listeners to recipe links
   document.querySelectorAll('.recipe-link').forEach(link => {
     link.addEventListener('click', (e) => {
       e.preventDefault();
       const recipeId = e.target.getAttribute('data-recipe');
-      loadRecipe(recipeId);
-      // Close sidebar on mobile after selecting recipe
-      if (window.innerWidth < 768) {
-        toggleSidebar(false);
-      }
+      setView('recipes');
+      renderRecipe(recipeId);
+      if (window.innerWidth < 768) closeSidebar();
     });
   });
 }
 
-function mountApp() {
-  // Search functionality
-  const searchInput = document.getElementById('search-input');
-  searchInput.addEventListener('input', (e) => {
-    const query = e.target.value;
-    const filtered = filterRecipes(query);
-    updateSidebar(filtered);
-  });
+function setView(view) {
+  appState.view = view;
+  setActiveViewButton(view);
 
-  // Sidebar toggle
-  const sidebarToggle = document.getElementById('sidebar-toggle');
-  const sidebar = document.getElementById('sidebar');
-  const overlay = document.getElementById('sidebar-overlay');
+  const categoriesDiv = document.getElementById('categories');
+  const scanPanel = document.getElementById('scan-panel');
 
-  function toggleSidebar(show) {
-    if (show) {
-      sidebar.classList.remove('-translate-x-full');
-      overlay.classList.remove('hidden');
-    } else {
-      sidebar.classList.add('-translate-x-full');
-      overlay.classList.add('hidden');
+  if (view === 'recipes') {
+    categoriesDiv.classList.remove('hidden');
+    scanPanel.classList.remove('hidden');
+    updateSidebar(filterRecipes(appState.searchQuery));
+    renderRecipe(appState.activeRecipeId);
+  } else {
+    categoriesDiv.classList.add('hidden');
+    scanPanel.classList.add('hidden');
+
+    if (view === 'gallery') {
+      renderGallery(appState.searchQuery);
+    } else if (view === 'notes') {
+      renderNotes(appState.searchQuery);
     }
   }
+}
+
+function mountApp() {
+  const searchInput = document.getElementById('search-input');
+  searchInput.addEventListener('input', (e) => {
+    appState.searchQuery = e.target.value;
+    setView(appState.view);
+  });
+
+  const sidebarToggle = document.getElementById('sidebar-toggle');
+  const overlay = document.getElementById('sidebar-overlay');
+  const lightboxOverlay = document.getElementById('lightbox-overlay');
+  const lightboxClose = document.getElementById('lightbox-close');
 
   sidebarToggle.addEventListener('click', () => {
+    const sidebar = document.getElementById('sidebar');
     const isHidden = sidebar.classList.contains('-translate-x-full');
-    toggleSidebar(isHidden);
+    if (isHidden) openSidebar();
+    else closeSidebar();
   });
 
-  overlay.addEventListener('click', () => {
-    toggleSidebar(false);
+  overlay.addEventListener('click', closeSidebar);
+
+  if (lightboxOverlay) {
+    lightboxOverlay.addEventListener('click', (e) => {
+      if (e.target === lightboxOverlay) closeModal();
+    });
+  }
+
+  if (lightboxClose) {
+    lightboxClose.addEventListener('click', closeModal);
+  }
+
+  document.querySelectorAll('[data-view]').forEach(btn => {
+    btn.addEventListener('click', () => {
+      const view = btn.getAttribute('data-view');
+      setView(view);
+      if (window.innerWidth < 768) {
+        closeSidebar();
+      }
+    });
   });
 
-  // Load default recipe and sidebar
-  loadRecipe('sayur-asem');
-  updateSidebar(recipes);
+  // Initialize
+  setView('recipes');
 }
 
 window.addEventListener('DOMContentLoaded', mountApp);
