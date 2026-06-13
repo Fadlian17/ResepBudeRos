@@ -29,7 +29,8 @@
   <link rel="stylesheet" href="src/styles.css">
   <title>Ibu's Digital Archive</title>
 </head>
-<body class="bg-background-light dark:bg-background-dark font-display text-slate-900 dark:text-slate-100 min-h-screen">
+  <body class="bg-background-light dark:bg-background-dark font-display text-slate-900 dark:text-slate-100 min-h-screen">
+  <a class="sr-only focus:not-sr-only" href="#content">Skip to content</a>
   <div class="layout-container flex h-full grow flex-col">
     <!-- Top Navigation -->
     <header class="flex items-center justify-between whitespace-nowrap border-b border-solid border-primary/10 px-4 md:px-10 py-4 bg-background-light/80 backdrop-blur-md sticky top-0 z-50">
@@ -160,12 +161,12 @@
   <script type="module" src="src/main.js"></script>
 
   <!-- Lightbox overlay (Gallery) -->
-  <div id="lightbox-overlay" class="hidden fixed inset-0 z-50 bg-black/75 flex items-center justify-center p-6">
+  <div id="lightbox-overlay" class="hidden fixed inset-0 z-50 bg-black/75 flex items-center justify-center p-6" role="dialog" aria-modal="true" aria-hidden="true" tabindex="-1">
     <div class="relative max-w-3xl w-full">
-      <button id="lightbox-close" class="absolute top-3 right-3 rounded-full bg-white/90 p-2 shadow hover:bg-white">
+      <button id="lightbox-close" class="absolute top-3 right-3 rounded-full bg-white/90 p-2 shadow hover:bg-white" aria-label="Close dialog">
         <span class="material-symbols-outlined">close</span>
       </button>
-      <div id="lightbox-content" class="rounded-xl overflow-hidden bg-white shadow-lg">
+      <div id="lightbox-content" class="rounded-xl overflow-hidden bg-white shadow-lg" aria-label="Image viewer">
         <!-- Lightbox content injected by JS -->
       </div>
     </div>

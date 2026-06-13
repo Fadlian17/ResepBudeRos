@@ -102,6 +102,13 @@ Buka browser ke **http://localhost:5000** (atau port yang ditampilkan).
 - Metadata & scan placeholder saat ini menggunakan data hardcoded; bisa dinamis dengan backend.
 - Responsive breakpoints: mobile < 768px, tablet 768px - 1023px, desktop ≥ 1024px.
 
+## Thumbnails (performance)
+
+- Place optimized thumbnail images under `public/gallery/thumbs/` and `public/scans/thumbs/`.
+- Thumbnails should use the same filename as the original but in WebP (recommended), e.g.:
+   `public/gallery/family-1.svg` -> `public/gallery/thumbs/family-1.webp`.
+- The app will automatically attempt to load thumbnails via `srcset` and fall back to the original image if the thumbnail is missing.
+
 ---
 
 **Didedikasikan untuk Ibu dan warisan resep keluarga.**

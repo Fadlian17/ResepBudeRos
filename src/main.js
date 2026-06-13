@@ -90,6 +90,28 @@ function renderMarkdown(md) {
   return marked.parse(md);
 }
 
+// Simple filter helper used by the sidebar and views
+function filterRecipes(query = '') {
+  const q = (query || '').trim().toLowerCase();
+  if (!q) return recipes;
+  return recipes.filter(r => {
+    return r.id.toLowerCase().includes(q)
+      || r.title.toLowerCase().includes(q)
+      || (r.description || '').toLowerCase().includes(q)
+      || (r.category || '').toLowerCase().includes(q);
+  });
+}
+
+// Compute a thumbnail path for an asset. Expects assets under `public/gallery/` or `public/scans/`.
+function getThumbPath(path) {
+  try {
+    // replace e.g. 'public/gallery/name.jpg' -> 'public/gallery/thumbs/name.webp'
+    return path.replace(/^public\/(gallery|scans)\//, 'public/$1/thumbs/').replace(/\.[^.]+$/, '.webp');
+  } catch (e) {
+    return path;
+  }
+}
+
 function createRecipeContent(recipe) {
   return `
     <div>
@@ -193,7 +215,7 @@ function createScanElement(recipe) {
         </div>
         ${recipe.scan.endsWith('.pdf') ? 
           `<embed class="absolute inset-0 w-full h-full object-cover mix-blend-multiply opacity-90" src="/${recipe.scan}" type="application/pdf" />` :
-          `<img class="absolute inset-0 w-full h-full object-cover mix-blend-multiply opacity-90" src="/${recipe.scan}" alt="Scanned handwritten recipe" />`
+          (() => { const thumb = getThumbPath(recipe.scan); return `<img class="absolute inset-0 w-full h-full object-cover mix-blend-multiply opacity-90" src="/${thumb}" srcset="/${thumb} 800w, /${recipe.scan} 1600w" sizes="(max-width:640px) 90vw, 600px" alt="Scanned handwritten recipe" loading="lazy" decoding="async" onerror="this.onerror=null;this.src='/${recipe.scan}'; this.removeAttribute('srcset');" />`; })()
         }
       </div>
     </div>
@@ -241,13 +263,80 @@ function createMetadataElement(recipe) {
 function openModal(contentHtml) {
   const overlay = document.getElementById('lightbox-overlay');
   const content = document.getElementById('lightbox-content');
+  // save previously focused element
+  appState._previouslyFocusedElement = document.activeElement;
   content.innerHTML = contentHtml;
+  overlay.classList.remove('hidden');
   overlay.classList.add('open');
+  overlay.setAttribute('aria-hidden', 'false');
+
+  // move focus into the modal
+  setTimeout(() => {
+    const focusable = overlay.querySelectorAll('a[href], button:not([disabled]), textarea, input, select, [tabindex]:not([tabindex="-1"])');
+    const first = focusable && focusable.length ? focusable[0] : overlay;
+    first.focus();
+  }, 10);
+
+  // key handlers for Esc, arrows, and Tab focus trap
+  appState._modalKeyHandler = (e) => {
+    if (e.key === 'Escape') {
+      e.preventDefault();
+      closeModal();
+      return;
+    }
+    if (e.key === 'ArrowLeft') {
+      const prev = document.getElementById('lightbox-prev');
+      if (prev && !prev.disabled) prev.click();
+      return;
+    }
+    if (e.key === 'ArrowRight') {
+      const next = document.getElementById('lightbox-next');
+      if (next && !next.disabled) next.click();
+      return;
+    }
+    if (e.key === 'Tab') {
+      const focusable = Array.from(overlay.querySelectorAll('a[href], button:not([disabled]), textarea, input, select, [tabindex]:not([tabindex="-1"])')).filter(el => el.offsetParent !== null);
+      if (!focusable.length) {
+        e.preventDefault();
+        return;
+      }
+      const idx = focusable.indexOf(document.activeElement);
+      if (e.shiftKey && idx === 0) {
+        focusable[focusable.length - 1].focus();
+        e.preventDefault();
+      } else if (!e.shiftKey && idx === focusable.length - 1) {
+        focusable[0].focus();
+        e.preventDefault();
+      }
+    }
+  };
+
+  document.addEventListener('keydown', appState._modalKeyHandler);
 }
 
 function closeModal() {
   const overlay = document.getElementById('lightbox-overlay');
+  overlay.classList.add('hidden');
   overlay.classList.remove('open');
+  overlay.setAttribute('aria-hidden', 'true');
+
+  // clear content
+  const content = document.getElementById('lightbox-content');
+  content.innerHTML = '';
+
+  // remove key handler
+  if (appState._modalKeyHandler) {
+    document.removeEventListener('keydown', appState._modalKeyHandler);
+    appState._modalKeyHandler = null;
+  }
+
+  // restore focus
+  try {
+    if (appState._previouslyFocusedElement && typeof appState._previouslyFocusedElement.focus === 'function') {
+      appState._previouslyFocusedElement.focus();
+    }
+  } catch (e) {}
+  appState._previouslyFocusedElement = null;
 }
 
 function showLightboxForItems(items, startIndex = 0) {
@@ -279,7 +368,7 @@ function showLightboxForItems(items, startIndex = 0) {
           <div class="aspect-[16/9] w-full bg-slate-100 rounded-lg overflow-hidden">
             ${item.src.endsWith('.pdf')
               ? `<embed src="/${item.src}" type="application/pdf" class="w-full h-full object-cover" />`
-              : `<img src="/${item.src}" alt="${item.title}" class="w-full h-full object-cover" />`}
+              : (() => { const thumb = getThumbPath(item.src); return `<img src="/${thumb}" srcset="/${thumb} 800w, /${item.src} 1600w" sizes="(max-width:640px) 90vw, 1200px" alt="${item.title}" loading="lazy" decoding="async" onerror="this.onerror=null;this.src='/${item.src}'; this.removeAttribute('srcset');" class="w-full h-full object-cover" />`; })()}
           </div>
         </div>
         <div class="p-4 border-t border-primary/10 text-right">
@@ -321,7 +410,7 @@ function openNotesModal(recipe) {
         <div class="aspect-[16/9] w-full bg-slate-100 rounded-lg overflow-hidden mb-4">
           ${recipe.scan.endsWith('.pdf')
             ? `<embed src="/${recipe.scan}" type="application/pdf" class="w-full h-full object-cover" />`
-            : `<img src="/${recipe.scan}" alt="${recipe.title}" class="w-full h-full object-cover" />`}
+            : (() => { const thumb = getThumbPath(recipe.scan); return `<img src="/${thumb}" srcset="/${thumb} 800w, /${recipe.scan} 1600w" sizes="(max-width:640px) 90vw, 800px" alt="${recipe.title}" loading="lazy" decoding="async" onerror="this.onerror=null;this.src='/${recipe.scan}'; this.removeAttribute('srcset');" class="w-full h-full object-cover" />`; })()}
         </div>
         <div class="flex flex-col gap-2">
           <button id="ocr-run" class="px-4 py-2 rounded-lg bg-primary text-white shadow-sm hover:bg-primary/90">Extract text (OCR)</button>
@@ -439,8 +528,9 @@ function renderGallery(query = '') {
   pageItems.forEach((item, idx) => {
     const card = document.createElement('div');
     card.className = 'rounded-xl overflow-hidden bg-white/80 shadow-sm border border-primary/10 hover:shadow-md transition-shadow cursor-pointer';
+    const thumb = getThumbPath(item.src);
     card.innerHTML = `
-      <img src="/${item.src}" alt="${item.title}" class="w-full h-40 object-cover" />
+      <img src="/${thumb}" srcset="/${thumb} 400w, /${item.src} 1200w" sizes="(max-width: 640px) 90vw, 400px" alt="${item.title}" loading="lazy" decoding="async" onerror="this.onerror=null;this.src='/${item.src}'; this.removeAttribute('srcset');" class="w-full h-40 object-cover" />
       <div class="p-4">
         <h3 class="font-bold text-lg text-slate-900">${item.title}</h3>
         <p class="text-slate-700 text-sm mt-2">${item.caption}</p>
@@ -522,7 +612,7 @@ function renderNotes(query = '') {
       <div class="relative h-40 bg-slate-100">
         ${recipe.scan.endsWith('.pdf')
           ? `<embed src="/${recipe.scan}" type="application/pdf" class="w-full h-full object-cover" />`
-          : `<img src="/${recipe.scan}" alt="Scan ${recipe.title}" class="w-full h-full object-cover" />`}
+          : (() => { const thumb = getThumbPath(recipe.scan); return `<img src="/${thumb}" srcset="/${thumb} 400w, /${recipe.scan} 1200w" sizes="(max-width:640px) 90vw, 400px" alt="Scan ${recipe.title}" loading="lazy" decoding="async" onerror="this.onerror=null;this.src='/${recipe.scan}'; this.removeAttribute('srcset');" class="w-full h-full object-cover" />`; })()}
         <div class="absolute bottom-0 left-0 right-0 bg-gradient-to-t from-slate-900/70 to-transparent px-3 py-2">
           <p class="text-sm text-white font-semibold">${recipe.title}</p>
         </div>
