@@ -1,159 +1,8 @@
-const recipes = [
-  {
-    id: 'sayur-asem',
-    title: 'Ibu\'s Sayur Asem',
-    description: 'A refreshing sweet and sour vegetable soup from West Java.',
-    category: 'Soups',
-    md: 'src/content/sayur-asem.md',
-    scan: 'public/scans/reseppart1.pdf',
-    metadata: {
-      dateScanned: 'Oct 12, 2023',
-      originalYear: 'Jakarta 1990',
-      location: 'East Jakarta, Jakarta',
-      format: 'Hardbound Notebook'
-    }
-  },
-  {
-    id: 'ayam-kecap',
-    title: 'Ayam Kecap',
-    description: 'Sweet soy sauce chicken dish.',
-    category: 'Main Dishes',
-    md: 'src/content/ayam-kecap.md',
-    scan: 'public/scans/ayam-kecap.pdf',
-    metadata: {
-      dateScanned: 'Oct 12, 2023',
-      originalYear: 'Circa 1985',
-      location: 'East Jakarta, Jakarta',
-      format: 'Hardbound Notebook'
-    }
-  },
-  {
-    id: 'soto-ayam',
-    title: 'Soto Ayam Kampung',
-    description: 'Traditional chicken soup.',
-    category: 'Soups',
-    md: 'src/content/soto-ayam.md',
-    scan: 'public/scans/soto.jpeg',
-    metadata: {
-      dateScanned: 'Oct 12, 2023',
-      originalYear: 'Jakarta 1990',
-      location: 'East Jakarta, Jakarta',
-      format: 'Hardbound Notebook'
-    }
-  },
-  {
-    id: 'sup-buntut',
-    title: 'Sup Buntut',
-    description: 'Oxtail soup.',
-    category: 'Soups',
-    md: 'src/content/sup-buntut.md',
-    scan: 'public/scans/reseppart1.pdf',
-    metadata: {
-      dateScanned: 'Oct 12, 2023',
-      originalYear: 'Jakarta 1990',
-      location: 'East Jakarta, Jakarta',
-      format: 'Hardbound Notebook'
-    }
-  }
-];
-
-const galleryItems = [
-  {
-    id: 'family-1',
-    title: 'Family Moment',
-    src: 'public/gallery/family-1.svg',
-    caption: 'A warm day in the kitchen with grandma.',
-  },
-  {
-    id: 'family-2',
-    title: 'Grandma\'s Kitchen',
-    src: 'public/gallery/family-2.svg',
-    caption: 'Dinner table stories and recipes.',
-  },
-  {
-    id: 'family-3',
-    title: 'Holiday Memories',
-    src: 'public/gallery/family-3.svg',
-    caption: 'Moments we save in our hearts.',
-  }
-];
-
-const appState = {
-  view: 'recipes', // 'recipes' | 'gallery' | 'notes'
-  activeRecipeId: 'sayur-asem',
-  searchQuery: '',
-  galleryPage: 1,
-  galleryPerPage: 6
-};
+import { recipes, galleryItems, appState } from './state.js';
+import { filterRecipes, getThumbPath, idbGet, idbPut } from './utils.js';
 
 function renderMarkdown(md) {
   return marked.parse(md);
-}
-
-// Simple filter helper used by the sidebar and views
-function filterRecipes(query = '') {
-  const q = (query || '').trim().toLowerCase();
-  if (!q) return recipes;
-  return recipes.filter(r => {
-    return r.id.toLowerCase().includes(q)
-      || r.title.toLowerCase().includes(q)
-      || (r.description || '').toLowerCase().includes(q)
-      || (r.category || '').toLowerCase().includes(q);
-  });
-}
-
-// Compute a thumbnail path for an asset. Expects assets under `public/gallery/` or `public/scans/`.
-function getThumbPath(path) {
-  try {
-    // replace e.g. 'public/gallery/name.jpg' -> 'public/gallery/thumbs/name.webp'
-    return path.replace(/^public\/(gallery|scans)\//, 'public/$1/thumbs/').replace(/\.[^.]+$/, '.webp');
-  } catch (e) {
-    return path;
-  }
-}
-
-// Simple IndexedDB helpers for caching
-function openIDB() {
-  return new Promise((resolve, reject) => {
-    const req = indexedDB.open('resep-cache', 1);
-    req.onupgradeneeded = (e) => {
-      const db = e.target.result;
-      if (!db.objectStoreNames.contains('pdf-thumbs')) db.createObjectStore('pdf-thumbs');
-      if (!db.objectStoreNames.contains('pdf-pages')) db.createObjectStore('pdf-pages');
-    };
-    req.onsuccess = (e) => resolve(e.target.result);
-    req.onerror = (e) => reject(e.target.error);
-  });
-}
-
-async function idbGet(store, key) {
-  try {
-    const db = await openIDB();
-    return await new Promise((resolve, reject) => {
-      const tx = db.transaction(store, 'readonly');
-      const os = tx.objectStore(store);
-      const r = os.get(key);
-      r.onsuccess = () => resolve(r.result);
-      r.onerror = () => reject(r.error);
-    });
-  } catch (e) {
-    return null;
-  }
-}
-
-async function idbPut(store, key, value) {
-  try {
-    const db = await openIDB();
-    return await new Promise((resolve, reject) => {
-      const tx = db.transaction(store, 'readwrite');
-      const os = tx.objectStore(store);
-      const r = os.put(value, key);
-      r.onsuccess = () => resolve(true);
-      r.onerror = () => reject(r.error);
-    });
-  } catch (e) {
-    return false;
-  }
 }
 
 function createRecipeContent(recipe) {
@@ -665,7 +514,7 @@ function renderRecipe(recipeId) {
 
   // Keep sidebar highlighting in sync
   if (appState.view === 'recipes') {
-    updateSidebar(filterRecipes(appState.searchQuery));
+    updateSidebar(filterRecipes(recipes, appState.searchQuery));
   }
 }
 
@@ -1205,7 +1054,7 @@ function setView(view) {
   if (view === 'recipes') {
     categoriesDiv.classList.remove('hidden');
     scanPanel.classList.remove('hidden');
-    updateSidebar(filterRecipes(appState.searchQuery));
+    updateSidebar(filterRecipes(recipes, appState.searchQuery));
     renderRecipe(appState.activeRecipeId);
   } else {
     categoriesDiv.classList.add('hidden');
