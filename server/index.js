@@ -12,16 +12,50 @@ const { db, init } = require('./db');
 const { signToken, verifyToken, ensureDir } = require('./utils');
 
 const PORT = process.env.PORT || 4000;
-const ADMIN_CODE = process.env.ADMIN_CODE || 'admincode';
+const ALLOWED_ORIGIN = process.env.ALLOWED_ORIGIN || 'http://localhost:4000';
+
+if (!process.env.ADMIN_CODE) {
+  console.error('FATAL: ADMIN_CODE environment variable is not set.');
+  process.exit(1);
+}
+const ADMIN_CODE = process.env.ADMIN_CODE;
 
 init();
 
 const app = express();
-app.use(cors());
+app.use(cors({ origin: ALLOWED_ORIGIN, credentials: true }));
 app.use(express.json());
 
-// static public files
-app.use('/', express.static(path.join(__dirname, '..')));
+// Rate limiter (simple in-memory)
+const rateLimitStore = new Map();
+function rateLimit({ windowMs, max }) {
+  return (req, res, next) => {
+    const key = req.ip;
+    const now = Date.now();
+    const record = rateLimitStore.get(key) || { count: 0, resetAt: now + windowMs };
+    if (now > record.resetAt) {
+      record.count = 0;
+      record.resetAt = now + windowMs;
+    }
+    record.count++;
+    rateLimitStore.set(key, record);
+    if (record.count > max) {
+      return res.status(429).json({ error: 'Too many requests. Please try again later.' });
+    }
+    next();
+  };
+}
+
+// Cleanup stale entries every 10 minutes
+setInterval(() => {
+  const now = Date.now();
+  for (const [key, record] of rateLimitStore) {
+    if (now > record.resetAt) rateLimitStore.delete(key);
+  }
+}, 10 * 60 * 1000);
+
+// static public files — only serve public/ directory, not the entire project
+app.use('/', express.static(path.join(__dirname, '..', 'public')));
 
 // ensure upload dirs
 const scansDir = path.join(__dirname, '..', 'public', 'scans');
@@ -51,13 +85,23 @@ function requireAuth(req, res, next) {
   next();
 }
 
-// admin verify endpoint
-app.post('/admin/verify', (req, res) => {
+// admin verify endpoint (rate limited: 5 attempts per 15 minutes)
+app.post('/admin/verify', rateLimit({ windowMs: 15 * 60 * 1000, max: 5 }), (req, res) => {
   const code = req.body.code;
   if (!code) return res.status(400).json({ error: 'code required' });
   if (code !== ADMIN_CODE) return res.status(403).json({ error: 'invalid code' });
   const token = signToken({ role: 'admin' });
   res.json({ token });
+});
+
+// Health check
+app.get('/health', (req, res) => {
+  try {
+    db.prepare('SELECT 1').get();
+    res.json({ status: 'ok', database: 'connected' });
+  } catch (e) {
+    res.status(500).json({ status: 'error', database: 'disconnected' });
+  }
 });
 
 // list recipes
