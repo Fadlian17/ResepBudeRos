@@ -1,13 +1,14 @@
-import { recipes, galleryItems, appState } from './state.js';
+import { recipes, appState } from './state.js';
 import { filterRecipes } from './utils.js';
 import { setActiveViewButton, closeSidebar, openSidebar, updateSidebar, setRenderRecipe, setView as setSidebarView } from './components/sidebar.js';
-import { closeModal } from './components/lightbox.js';
 import { renderRecipe } from './views/recipe.js';
 import { renderGallery } from './views/gallery.js';
 import { renderNotes } from './views/notes.js';
 import { renderAdmin } from './views/admin.js';
+import { closeModal } from './components/lightbox.js';
 
-function setView(view) {
+// Re-export for backward compatibility
+export function setView(view) {
   appState.view = view;
   setActiveViewButton(view);
 
