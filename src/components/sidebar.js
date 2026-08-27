@@ -1,6 +1,4 @@
 import { appState } from '../state.js';
-import { filterRecipes } from '../utils.js';
-import { recipes } from '../state.js';
 
 let _renderRecipe = null;
 let _setView = null;
