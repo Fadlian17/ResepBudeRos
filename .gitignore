@@ -1,4 +1,11 @@
 node_modules/
 package-lock.json
-package.json
-tailwind.config.js
+
+# Environment variables
+.env
+
+# Database
+data/
+
+# Uploads (keep scans/ tracked if you want, but thumbs are generated)
+public/scans/thumbs/
