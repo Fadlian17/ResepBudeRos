@@ -8,8 +8,8 @@ const sharp = require('sharp');
 const slugify = require('slugify');
 const { v4: uuidv4 } = require('uuid');
 
-const { db, init } = require('./db');
-const { signToken, verifyToken, ensureDir } = require('./utils');
+const { db, init } = require('./db.cjs');
+const { signToken, verifyToken, ensureDir } = require('./utils.cjs');
 
 const PORT = process.env.PORT || 4000;
 const ALLOWED_ORIGIN = process.env.ALLOWED_ORIGIN || 'http://localhost:4000';
